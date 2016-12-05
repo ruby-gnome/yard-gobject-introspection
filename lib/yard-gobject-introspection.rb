@@ -1,23 +1,39 @@
 require "yard"
-require "gobject-introspection"
+require "rexml/document"
+include REXML
 
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
 
   def process
-    base = File.join(File.dirname(File.expand_path(statement.file)))
-    $LOAD_PATH.unshift(base)
+    gir_path = "/usr/share/gir-1.0"
 
-    puts "-- Load module info"
-
-    require File.expand_path(statement.file)
     module_name = statement[0].source
-    puts module_name
-    current_module = Object.const_get("#{module_name}")
-    current_module.init if current_module.respond_to?(:init)
+    girs_files = Dir.glob("#{gir_path}/#{module_name}-?.*gir")
+    gir_file = girs_files.last
+    file = File.new(gir_file)
+    doc = Document.new file
 
-    current_module.constants.each do |c|
-      puts "#{c} #{current_module.const_get(c).class}"
+    module_yo = register ModuleObject.new(namespace, module_name)
+    doc.elements.each("repository/namespace/class") do |klass|
+      klass_name = klass.attributes["name"]
+      klass_yo = ClassObject.new(module_yo, klass_name)
+      documentation = klass.elements["doc"]
+      klass_yo.docstring = documentation ? documentation.text : ""
+
+      klass.elements.each("constructor") do |c|
+        m = MethodObject.new(klass_yo, c.attributes["name"])
+        documentation = c.elements["doc"]
+        m.docstring = documentation ? documentation.text : ""
+      end
+
+      klass.elements.each("method") do |c|
+        m = MethodObject.new(klass_yo, c.attributes["name"])
+        documentation = c.elements["doc"]
+        m.docstring = documentation ? documentation.text : ""
+      end
     end
+
   end
 end
+

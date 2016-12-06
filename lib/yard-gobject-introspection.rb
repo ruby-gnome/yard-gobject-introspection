@@ -1,6 +1,5 @@
 require "yard"
 require "rexml/document"
-include REXML
 
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
@@ -12,7 +11,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     girs_files = Dir.glob("#{gir_path}/#{module_name}-?.*gir")
     gir_file = girs_files.last
     file = File.new(gir_file)
-    doc = Document.new file
+    doc = REXML::Document.new file
 
     @klasses_yo = {}
     @xml_klasses_queue = []

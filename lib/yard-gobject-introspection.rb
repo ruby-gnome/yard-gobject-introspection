@@ -27,7 +27,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         build_class_object(klass, @klasses_yo[parent_klass])
       else
         @xml_klasses_queue << klass
-        next
       end
     end
 
@@ -53,19 +52,29 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_name = klass.attributes["name"]
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
-    documentation = klass.elements["doc"]
-    klass_yo.docstring = documentation ? documentation.text : ""
+    klass_yo.docstring = read_doc(klass)
 
-    klass.elements.each("constructor") do |c|
-      m = MethodObject.new(klass_yo, c.attributes["name"])
-      documentation = c.elements["doc"]
-      m.docstring = documentation ? documentation.text : ""
+    register_constructors(klass, klass_yo)
+
+    register_methods(klass, klass_yo)
+  end
+
+  def read_doc(node)
+    documentation = node.elements["doc"]
+    documentation ? documentation.text : ""
+  end
+
+  def register_methods(klass, klass_yo)
+    klass.elements.each("method") do |m|
+      method = MethodObject.new(klass_yo, m.attributes["name"])
+      method.docstring = read_doc(m)
     end
+  end
 
-    klass.elements.each("method") do |c|
-      m = MethodObject.new(klass_yo, c.attributes["name"])
-      documentation = c.elements["doc"]
-      m.docstring = documentation ? documentation.text : ""
+  def register_constructors(klass, klass_yo)
+    klass.elements.each("constructor") do |c|
+      method = MethodObject.new(klass_yo, c.attributes["name"])
+      method.docstring = read_doc(c)
     end
   end
 end

@@ -7,8 +7,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   def process
     gir_path = "/usr/share/gir-1.0"
 
-    module_name = statement[0].source
-    girs_files = Dir.glob("#{gir_path}/#{module_name}-?.*gir")
+    @module_name = statement[0].source
+    girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")
     gir_file = girs_files.last
     file = File.new(gir_file)
     doc = REXML::Document.new file
@@ -16,7 +16,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     @klasses_yo = {}
     @xml_klasses_queue = []
 
-    @module_yo = register ModuleObject.new(namespace, module_name)
+    @module_yo = register ModuleObject.new(namespace, @module_name)
 
     doc.elements.each("repository/namespace/class") do |klass|
       parent_klass = klass.attributes["parent"]
@@ -65,17 +65,65 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   end
 
   def register_methods(klass, klass_yo)
-    klass.elements.each("method") do |m|
-      method = MethodObject.new(klass_yo, m.attributes["name"])
-      method.docstring = read_doc(m)
-    end
+    _register_methods(klass, klass_yo, "method")
   end
 
   def register_constructors(klass, klass_yo)
-    klass.elements.each("constructor") do |c|
-      method = MethodObject.new(klass_yo, c.attributes["name"])
-      method.docstring = read_doc(c)
+    _register_methods(klass, klass_yo, "constructor")
+  end
+
+  def _register_methods(klass, klass_yo, method_type)
+    klass.elements.each(method_type) do |m|
+      method = MethodObject.new(klass_yo, m.attributes["name"])
+      documentation = read_doc(m)
+      parameters = []
+      m.elements.each("parameters/parameter") do |p|
+        pname = p.attributes["name"]
+        atype = nil
+        if p.elements["type"]
+          atype = ctypes_to_ruby(p.elements["type"].attributes["name"])
+        elsif p.elements["array"]
+          atype = p.elements["array/type"].attributes["name"]
+          atype = "Array<#{ctypes_to_ruby(atype)}>"
+        elsif pname == "..."
+          atype = "Array"
+          pname = "array"
+        else
+          puts "Err Other type for #{pname} parameter"
+        end
+
+        ptype = atype
+        puts ptype
+        pdoc = read_doc(p)
+        documentation += "\n@param #{pname} [#{ptype}] #{pdoc}"
+        parameters << [pname, nil]
+      end
+      method.parameters = parameters
+      method.docstring = documentation
     end
+  end
+
+  def ctypes_to_ruby(ctype)
+    case ctype
+    when /(guint8)|(gsize)|(gint)|(guint)/
+      "Integer"
+    when "gdouble"
+      "Float"
+    when "utf8"
+      "String"
+    when "gboolean"
+      "TrueClass"
+    when /.*\..*/
+      ctype.gsub("\.", "::")
+    else
+      "#{@module_name}::#{ctype}"
+    end
+    # TODO : manage :
+    # Gsf::va_list
+    # Gsf::gpointer
+    # Gsf::gsf_off_t
+    # Gsf::gpointer
+    # Gsf::gsf_off_t
   end
 end
 

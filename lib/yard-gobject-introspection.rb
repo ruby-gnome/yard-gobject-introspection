@@ -98,6 +98,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         parameters << [infos[:name], nil]
       end
       method.parameters = parameters
+      ret_infos = read_return_value_information(m.elements["return-value"])
+      documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
       method.docstring = documentation
     end
   end
@@ -119,6 +121,21 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     pdoc = read_doc(node)
     {:name => pname, :type => ptype, :doc => pdoc}
+  end
+
+  def read_return_value_information(node)
+    ptype = nil
+    if node.elements["type"]
+      ptype = ctypes_to_ruby(node.elements["type"].attributes["name"])
+    elsif node.elements["array"]
+      ptype = node.elements["array/type"].attributes["name"]
+      ptype = "Array<#{ctypes_to_ruby(ptype)}>"
+    else
+      puts "Err Other type for #{ptype} return value"
+    end
+
+    pdoc = read_doc(node)
+    {:type => ptype, :doc => pdoc}
   end
 
   def ctypes_to_ruby(ctype)

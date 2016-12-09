@@ -8,7 +8,14 @@ yard plugin for building documentation of libraries based on GObject-Intropectio
 * Ruby/GObject-Introspection in [Ruby-GNOME2](http://ruby-gnome2.sourceforge.jp/)
 * [GObject Introspection](http://live.gnome.org/GObjectIntrospection)
 
-## Install
+## Try it
+
+    git clone https://github.com/ruby-gnome2/yard-gobject-introspection
+    cd yard-gobject-introspection
+    yard doc --load lib/yard-gobject-introspection.rb ~/.gem/ruby/2.x.x/gems/gtk3-3.x.x/lib/gtk3.rb
+    firefox doc/index.html
+
+## Install (when we will push it)
 
     gem install yard-gobject-introspection
 

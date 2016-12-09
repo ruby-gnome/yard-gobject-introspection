@@ -119,11 +119,11 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       "#{@module_name}::#{ctype}"
     end
     # TODO : manage :
-    # Gsf::va_list
-    # Gsf::gpointer
-    # Gsf::gsf_off_t
-    # Gsf::gpointer
-    # Gsf::gsf_off_t
+    # va_list
+    # gpointer
+    # gsf_off_t
+    # gpointer
+    # gsf_off_t
   end
 end
 

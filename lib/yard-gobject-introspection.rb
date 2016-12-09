@@ -61,7 +61,22 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def read_doc(node)
     documentation = node.elements["doc"]
-    documentation ? documentation.text : ""
+    documentation ? parse_gtk_doc_tags(documentation.text) : ""
+  end
+
+  def parse_gtk_doc_tags(doc)
+    # Substitue #GtkSomething to Gtk::Something
+    parsed = doc.gsub(/\#([A-Z]+[a-z]+)([A-Z]+.*)/, '\1::\2')
+    # Manage @parameter to <b>parameter</b>
+    parsed.gsub!(/@(\w+)/,'<b>\1</b>')
+    # Replace Null terminated array
+    parsed.gsub!(/a %NULL-terminated array/,"an array")
+    # Replace %NULL with nil
+    parsed.gsub!(/%NULL/, "nil")
+    # Replace %TRUE %FALSE
+    parsed.gsub!(/%TRUE/, "true")
+    parsed.gsub!(/%FALSE/, "false")
+    parsed
   end
 
   def register_methods(klass, klass_yo)

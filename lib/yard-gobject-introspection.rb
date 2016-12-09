@@ -55,7 +55,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_yo.docstring = read_doc(klass)
 
     register_constructors(klass, klass_yo)
-
     register_methods(klass, klass_yo)
   end
 
@@ -105,37 +104,35 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   end
 
   def read_parameter_information(node)
-    pname = node.attributes["name"]
-    ptype = nil
+    name = node.attributes["name"]
+    type = nil
     if node.elements["type"]
-      ptype = ctypes_to_ruby(node.elements["type"].attributes["name"])
+      type = ctypes_to_ruby(node.elements["type"].attributes["name"])
     elsif node.elements["array"]
-      ptype = node.elements["array/type"].attributes["name"]
-      ptype = "Array<#{ctypes_to_ruby(ptype)}>"
-    elsif pname == "..."
-      ptype = "Array"
-      pname = "array"
+      type = node.elements["array/type"].attributes["name"]
+      type = "Array<#{ctypes_to_ruby(type)}>"
+    elsif name == "..."
+      type = "Array"
+      name = "array"
     else
-      puts "Err Other type for #{pname} parameter"
+      puts "Err Other type for #{name} parameter"
     end
 
-    pdoc = read_doc(node)
-    {:name => pname, :type => ptype, :doc => pdoc}
+    {:name => name, :type => type, :doc => read_doc(node)}
   end
 
   def read_return_value_information(node)
-    ptype = nil
+    type = nil
     if node.elements["type"]
-      ptype = ctypes_to_ruby(node.elements["type"].attributes["name"])
+      type = ctypes_to_ruby(node.elements["type"].attributes["name"])
     elsif node.elements["array"]
-      ptype = node.elements["array/type"].attributes["name"]
-      ptype = "Array<#{ctypes_to_ruby(ptype)}>"
+      type = node.elements["array/type"].attributes["name"]
+      type = "Array<#{ctypes_to_ruby(type)}>"
     else
-      puts "Err Other type for #{ptype} return value"
+      puts "Err Other type for #{type} return value"
     end
 
-    pdoc = read_doc(node)
-    {:type => ptype, :doc => pdoc}
+    {:type => type, :doc => read_doc(node)}
   end
 
   def ctypes_to_ruby(ctype)

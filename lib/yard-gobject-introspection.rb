@@ -78,29 +78,32 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       documentation = read_doc(m)
       parameters = []
       m.elements.each("parameters/parameter") do |p|
-        pname = p.attributes["name"]
-        atype = nil
-        if p.elements["type"]
-          atype = ctypes_to_ruby(p.elements["type"].attributes["name"])
-        elsif p.elements["array"]
-          atype = p.elements["array/type"].attributes["name"]
-          atype = "Array<#{ctypes_to_ruby(atype)}>"
-        elsif pname == "..."
-          atype = "Array"
-          pname = "array"
-        else
-          puts "Err Other type for #{pname} parameter"
-        end
-
-        ptype = atype
-        puts ptype
-        pdoc = read_doc(p)
-        documentation += "\n@param #{pname} [#{ptype}] #{pdoc}"
-        parameters << [pname, nil]
+        infos = read_parameter_information(p)
+        documentation += "\n@param #{infos[:name]} [#{infos[:type]}] #{infos[:doc]}"
+        parameters << [infos[:name], nil]
       end
       method.parameters = parameters
       method.docstring = documentation
     end
+  end
+
+  def read_parameter_information(node)
+    pname = node.attributes["name"]
+    ptype = nil
+    if node.elements["type"]
+      ptype = ctypes_to_ruby(node.elements["type"].attributes["name"])
+    elsif node.elements["array"]
+      ptype = node.elements["array/type"].attributes["name"]
+      ptype = "Array<#{ctypes_to_ruby(ptype)}>"
+    elsif pname == "..."
+      ptype = "Array"
+      pname = "array"
+    else
+      puts "Err Other type for #{pname} parameter"
+    end
+
+    pdoc = read_doc(node)
+    {:name => pname, :type => ptype, :doc => pdoc}
   end
 
   def ctypes_to_ruby(ctype)

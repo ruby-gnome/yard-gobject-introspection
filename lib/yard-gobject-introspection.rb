@@ -44,6 +44,22 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         build_class_object(klass, @module_yo)
       end
     end
+
+    doc.elements.each("repository/namespace/enumeration") do |enum|
+      name = enum.attributes["name"]
+      enum_mod = ModuleObject.new(namespace, name)
+      documentation = read_doc(enum)
+      val = 0
+      enum.elements.each("member") do |member|
+        member_name = member.attributes["name"]
+        puts member_name
+        const = ConstantObject.new(enum_mod, member_name.upcase)
+        value = member.attributes["value"] || val
+        const.value = "#{value} or :#{member_name}"
+        const.docstring = read_doc(member)
+        val += 1
+      end
+    end
   end
 
   private

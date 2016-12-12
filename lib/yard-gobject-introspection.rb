@@ -11,15 +11,16 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")
     gir_file = girs_files.last
     file = File.new(gir_file)
-    doc = REXML::Document.new file
+    gir_document = REXML::Document.new file
 
     @klasses_yo = {}
     @xml_klasses_queue = []
 
     @module_yo = register ModuleObject.new(namespace, @module_name)
-    version = doc.elements["repository/namespace"].attributes["version"]
+    version = gir_document.elements["repository/namespace"].attributes["version"]
     @module_yo.docstring = "@version #{version}"
-    doc.elements.each("repository/namespace/class") do |klass|
+
+    gir_document.elements.each("repository/namespace/class") do |klass|
       parent_klass = klass.attributes["parent"]
 
       if parent_klass == nil || parent_klass == "GObject.Object"
@@ -46,15 +47,14 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
-    doc.elements.each("repository/namespace/constant") do |constant|
+    gir_document.elements.each("repository/namespace/constant") do |constant|
       name = constant.attributes["name"]
       value = constant.attributes["value"]
       documentation = read_doc(constant)
       register_constant(@module_yo, name, value, documentation)
     end
 
-
-    doc.elements.each("repository/namespace/enumeration") do |enum|
+    gir_document.elements.each("repository/namespace/enumeration") do |enum|
       name = enum.attributes["name"]
       enum_mod = ModuleObject.new(@module_yo, name)
       documentation = read_doc(enum)

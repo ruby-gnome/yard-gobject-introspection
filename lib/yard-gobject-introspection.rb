@@ -17,7 +17,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     @xml_klasses_queue = []
 
     @module_yo = register ModuleObject.new(namespace, @module_name)
-
+    version = doc.elements["repository/namespace"].attributes["version"]
+    @module_yo.docstring = "@version #{version}"
     doc.elements.each("repository/namespace/class") do |klass|
       parent_klass = klass.attributes["parent"]
 

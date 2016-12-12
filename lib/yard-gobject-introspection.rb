@@ -53,11 +53,9 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       val = 0
       enum.elements.each("member") do |member|
         member_name = member.attributes["name"]
-        puts member_name
-        const = ConstantObject.new(enum_mod, member_name.upcase)
-        value = member.attributes["value"] || val
-        const.value = "#{value} or :#{member_name}"
-        const.docstring = read_doc(member)
+        value = "#{member.attributes["value"] || val} or :#{member_name}"
+        doc = read_doc(member)
+        register_constant(enum_mod, member_name.upcase, value, doc)
         val += 1
       end
     end
@@ -93,6 +91,12 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     parsed.gsub!(/%TRUE/, "true")
     parsed.gsub!(/%FALSE/, "false")
     parsed
+  end
+
+  def register_constant(namespace, name, value, doc)
+    const = ConstantObject.new(namespace, name)
+    const.value = value
+    const.docstring = doc
   end
 
   def register_methods(klass, klass_yo)

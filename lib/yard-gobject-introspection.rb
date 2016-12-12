@@ -48,7 +48,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     doc.elements.each("repository/namespace/enumeration") do |enum|
       name = enum.attributes["name"]
-      enum_mod = ModuleObject.new(namespace, name)
+      enum_mod = ModuleObject.new(@module_yo, name)
       documentation = read_doc(enum)
       val = 0
       enum.elements.each("member") do |member|

@@ -46,6 +46,14 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
+    doc.elements.each("repository/namespace/constant") do |constant|
+      name = constant.attributes["name"]
+      value = constant.attributes["value"]
+      documentation = read_doc(constant)
+      register_constant(@module_yo, name, value, documentation)
+    end
+
+
     doc.elements.each("repository/namespace/enumeration") do |enum|
       name = enum.attributes["name"]
       enum_mod = ModuleObject.new(@module_yo, name)
@@ -54,8 +62,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       enum.elements.each("member") do |member|
         member_name = member.attributes["name"]
         value = "#{member.attributes["value"] || val} or :#{member_name}"
-        doc = read_doc(member)
-        register_constant(enum_mod, member_name.upcase, value, doc)
+        documentation = read_doc(member)
+        register_constant(enum_mod, member_name.upcase, value, documentation)
         val += 1
       end
     end

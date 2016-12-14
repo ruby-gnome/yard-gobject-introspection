@@ -117,7 +117,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def _register_methods(klass, klass_yo, method_type)
     klass.elements.each(method_type) do |m|
-      method = MethodObject.new(klass_yo, m.attributes["name"])
       documentation = read_doc(m)
       parameters = []
       m.elements.each("parameters/parameter") do |p|
@@ -125,11 +124,19 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         documentation += "\n@param #{infos[:name]} [#{infos[:type]}] #{infos[:doc]}"
         parameters << [infos[:name], nil]
       end
-      method.parameters = parameters
       ret_infos = read_return_value_information(m.elements["return-value"])
       documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
+      name = m.attributes["name"]
+      method = MethodObject.new(klass_yo, name)
+      method.parameters = parameters
       method.docstring = documentation
+      if name =~ /^get_.*$/ && parameters.empty?
+        name.gsub!(/^get_/,"")
+        method = MethodObject.new(klass_yo, name)
+        method.docstring = documentation
+      end
     end
+
   end
 
   def read_parameter_information(node)

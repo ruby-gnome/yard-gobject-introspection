@@ -134,7 +134,12 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         name.gsub!(/^get_/,"")
         method = MethodObject.new(klass_yo, name)
         method.docstring = documentation
+      elsif name =~/^set_.*$/ && parameters.size == 1
+        name.gsub!(/^set_(.*$)/,'\1=')
+        method = MethodObject.new(klass_yo, name)
+        method.docstring = documentation
       end
+
     end
 
   end

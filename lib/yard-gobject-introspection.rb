@@ -132,6 +132,9 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       method.docstring = documentation
       if name =~ /^get_.*$/ && parameters.empty?
         name.gsub!(/^get_/,"")
+        if m.elements["return-value/type"].attributes["name"] =~ /gboolean/
+          name += "?"
+        end
         method = MethodObject.new(klass_yo, name)
         method.docstring = documentation
       elsif name =~/^set_.*$/ && parameters.size == 1
@@ -139,9 +142,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         method = MethodObject.new(klass_yo, name)
         method.docstring = documentation
       end
-
     end
-
   end
 
   def read_parameter_information(node)

@@ -76,9 +76,9 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
     klass_yo.docstring = read_doc(klass)
-
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
+    register_properties(klass, klass_yo)
   end
 
   def read_doc(node)
@@ -99,6 +99,34 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     parsed.gsub!(/%TRUE/, "true")
     parsed.gsub!(/%FALSE/, "false")
     parsed
+  end
+
+  def register_properties(klass, klass_yo)
+    klass.elements.each("property") do |prop|
+      name = prop.attributes["name"]
+      method_name =  name.gsub(/-/,"_")
+      readable = prop.attributes["readable"] || "1"
+      writable = prop.attributes["writable"] || "1"
+      documentation = read_doc(prop)
+      type = ctypes_to_ruby(prop.elements["type"].attributes["name"])
+
+      if readable == "1"
+        rname = method_name
+        rname += "?" if type == "TrueClass"
+        documentation += "\n@return [#{type}] #{name}"
+        method = MethodObject.new(klass_yo, rname)
+        method.docstring = documentation
+      end
+
+      if writable == "1"
+        wname = method_name + "="
+        method = MethodObject.new(klass_yo, wname)
+        method.parameters = [[name, nil]]
+        documentation += "\n@param #{name} [#{type}]"
+        documentation += "\n@return [#{type}] #{name}"
+        method.docstring = documentation
+      end
+    end
   end
 
   def register_constant(namespace, name, value, doc)

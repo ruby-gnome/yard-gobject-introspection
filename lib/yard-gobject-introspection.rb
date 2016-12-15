@@ -127,21 +127,22 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       ret_infos = read_return_value_information(m.elements["return-value"])
       documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
       name = m.attributes["name"]
+      name = rubyish_method_name(name, parameters.size, ret_infos[:type])
       method = MethodObject.new(klass_yo, name)
       method.parameters = parameters
       method.docstring = documentation
-      if name =~ /^get_.*$/ && parameters.empty?
-        name.gsub!(/^get_/,"")
-        if m.elements["return-value/type"].attributes["name"] =~ /gboolean/
-          name += "?"
-        end
-        method = MethodObject.new(klass_yo, name)
-        method.docstring = documentation
-      elsif name =~/^set_.*$/ && parameters.size == 1
-        name.gsub!(/^set_(.*$)/,'\1=')
-        method = MethodObject.new(klass_yo, name)
-        method.docstring = documentation
-      end
+    end
+  end
+
+  def rubyish_method_name(name, nb_params, return_type)
+    if name =~ /^get_.*$/ && nb_params == 0
+      name.gsub!(/^get_/,"")
+      name += "?" if (return_type == "gboolean")
+      name
+    elsif name =~/^set_.*$/ && nb_params == 1
+      name.gsub!(/^set_(.*$)/,'\1=')
+    else
+      name
     end
   end
 

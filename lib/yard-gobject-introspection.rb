@@ -121,8 +121,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       if writable == "1"
         wname = method_name + "="
         method = MethodObject.new(klass_yo, wname)
-        method.parameters = [[name, nil]]
-        documentation += "\n@param #{name} [#{type}]"
+        method.parameters = [[method_name, nil]]
+        documentation += "\n@param #{method_name} [#{type}]"
         documentation += "\n@return [#{type}] #{name}"
         method.docstring = documentation
       end

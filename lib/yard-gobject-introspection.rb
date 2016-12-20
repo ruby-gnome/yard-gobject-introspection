@@ -22,7 +22,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     begin
       gir_document.elements.each("repository/namespace/class") do |klass|
-        next unless klass
         parent_klass = klass.attributes["parent"]
 
         if parent_klass == nil || parent_klass == "GObject.Object"
@@ -39,7 +38,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     begin
       @xml_klasses_queue.each do |klass|
-        next unless klass
         parent_klass = klass.attributes["parent"]
 
         if parent_klass == nil || parent_klass == "GObject.Object"
@@ -59,7 +57,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     begin
       gir_document.elements.each("repository/namespace/constant") do |constant|
-        next unless constant
         name = constant.attributes["name"]
         value = constant.attributes["value"]
         documentation = read_doc(constant)
@@ -71,13 +68,11 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     begin
       gir_document.elements.each("repository/namespace/enumeration") do |enum|
-        next unless enum
         name = enum.attributes["name"]
         enum_mod = ModuleObject.new(@module_yo, name)
         documentation = read_doc(enum)
         val = 0
         enum.elements.each("member") do |member|
-          next unless member
           member_name = member.attributes["name"]
           value = "#{member.attributes["value"] || val} or :#{member_name}"
           documentation = read_doc(member)
@@ -124,7 +119,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def register_properties(klass, klass_yo)
     klass.elements.each("property") do |prop|
-      next unless prop
       name = prop.attributes["name"]
       method_name =  name.gsub(/-/,"_")
       readable = prop.attributes["readable"] || "1"
@@ -168,11 +162,9 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def _register_methods(klass, klass_yo, method_type)
     klass.elements.each(method_type) do |m|
-      next unless m
       documentation = read_doc(m)
       parameters = []
       m.elements.each("parameters/parameter") do |p|
-        next unless p
         infos = read_parameter_information(p)
         documentation += "\n@param #{infos[:name]} [#{infos[:type]}] #{infos[:doc]}"
         parameters << [infos[:name], nil]

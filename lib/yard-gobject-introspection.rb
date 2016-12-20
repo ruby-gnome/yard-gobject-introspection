@@ -20,57 +20,73 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     version = gir_document.elements["repository/namespace"].attributes["version"]
     @module_yo.docstring = "@version #{version}"
 
-    gir_document.elements.each("repository/namespace/class") do |klass|
-      next unless klass
-      parent_klass = klass.attributes["parent"]
+    begin
+      gir_document.elements.each("repository/namespace/class") do |klass|
+        next unless klass
+        parent_klass = klass.attributes["parent"]
 
-      if parent_klass == nil || parent_klass == "GObject.Object"
-        build_class_object(klass, @module_yo)
-      elsif @klasses_yo[parent_klass]
-        build_class_object(klass, @klasses_yo[parent_klass])
-      else
-        @xml_klasses_queue << klass
+        if parent_klass == nil || parent_klass == "GObject.Object"
+          build_class_object(klass, @module_yo)
+        elsif @klasses_yo[parent_klass]
+          build_class_object(klass, @klasses_yo[parent_klass])
+        else
+          @xml_klasses_queue << klass
+        end
       end
+    rescue => error
+      STDERR.puts "Class parsing error : #{error.message}"
     end
 
-    @xml_klasses_queue.each do |klass|
-      next unless klass
-      parent_klass = klass.attributes["parent"]
+    begin
+      @xml_klasses_queue.each do |klass|
+        next unless klass
+        parent_klass = klass.attributes["parent"]
 
-      if parent_klass == nil || parent_klass == "GObject.Object"
-        build_class_object(klass, @module_yo)
-      elsif @klasses_yo[parent_klass]
-        build_class_object(klass, @klasses_yo[parent_klass])
-      else
-        # TODO : improve.
-        # is this condition is used, it means that the parent is
-        # not a known class in this module
-        build_class_object(klass, @module_yo)
+        if parent_klass == nil || parent_klass == "GObject.Object"
+          build_class_object(klass, @module_yo)
+        elsif @klasses_yo[parent_klass]
+          build_class_object(klass, @klasses_yo[parent_klass])
+        else
+          # TODO : improve.
+          # is this condition is used, it means that the parent is
+          # not a known class in this module
+          build_class_object(klass, @module_yo)
+        end
       end
+    rescue => error
+      STDERR.puts "SubClass parsing error : #{error.message}"
     end
 
-    gir_document.elements.each("repository/namespace/constant") do |constant|
-      next unless constant
-      name = constant.attributes["name"]
-      value = constant.attributes["value"]
-      documentation = read_doc(constant)
-      register_constant(@module_yo, name, value, documentation)
+    begin
+      gir_document.elements.each("repository/namespace/constant") do |constant|
+        next unless constant
+        name = constant.attributes["name"]
+        value = constant.attributes["value"]
+        documentation = read_doc(constant)
+        register_constant(@module_yo, name, value, documentation)
+      end
+    rescue => error
+      STDERR.puts "Constants parsing error: #{error.message}"
     end
 
-    gir_document.elements.each("repository/namespace/enumeration") do |enum|
-      next unless enum
-      name = enum.attributes["name"]
-      enum_mod = ModuleObject.new(@module_yo, name)
-      documentation = read_doc(enum)
-      val = 0
-      enum.elements.each("member") do |member|
-        next unless member
-        member_name = member.attributes["name"]
-        value = "#{member.attributes["value"] || val} or :#{member_name}"
-        documentation = read_doc(member)
-        register_constant(enum_mod, member_name.upcase, value, documentation)
-        val += 1
+    begin
+      gir_document.elements.each("repository/namespace/enumeration") do |enum|
+        next unless enum
+        name = enum.attributes["name"]
+        enum_mod = ModuleObject.new(@module_yo, name)
+        documentation = read_doc(enum)
+        val = 0
+        enum.elements.each("member") do |member|
+          next unless member
+          member_name = member.attributes["name"]
+          value = "#{member.attributes["value"] || val} or :#{member_name}"
+          documentation = read_doc(member)
+          register_constant(enum_mod, member_name.upcase, value, documentation)
+          val += 1
+        end
       end
+    rescue => error
+      STDERR.puts "Enumerations parsing error: #{error.message}"
     end
   end
 

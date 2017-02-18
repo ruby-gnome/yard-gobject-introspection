@@ -37,6 +37,22 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     end
 
     begin
+      gir_document.elements.each("repository/namespace/record") do |klass|
+        parent_klass = klass.attributes["parent"]
+
+        if parent_klass == nil || parent_klass == "GObject.Object"
+          build_class_object(klass, @module_yo)
+        elsif @klasses_yo[parent_klass]
+          build_class_object(klass, @klasses_yo[parent_klass])
+        else
+          @xml_klasses_queue << klass
+        end
+      end
+    rescue => error
+      STDERR.puts "Class parsing error : #{error.message}"
+    end
+
+    begin
       @xml_klasses_queue.each do |klass|
         parent_klass = klass.attributes["parent"]
 

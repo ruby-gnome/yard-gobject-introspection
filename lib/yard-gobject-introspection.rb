@@ -48,6 +48,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
           # TODO : improve.
           # is this condition is used, it means that the parent is
           # not a known class in this module
+          STDERR.puts "Can not found Superclass for #{klass.attributes["name"]}"
           build_class_object(klass, @module_yo)
         end
       end
@@ -68,6 +69,24 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
     begin
       gir_document.elements.each("repository/namespace/enumeration") do |enum|
+        name = enum.attributes["name"]
+        enum_mod = ModuleObject.new(@module_yo, name)
+        documentation = read_doc(enum)
+        val = 0
+        enum.elements.each("member") do |member|
+          member_name = member.attributes["name"]
+          value = "#{member.attributes["value"] || val} or :#{member_name}"
+          documentation = read_doc(member)
+          register_constant(enum_mod, member_name.upcase, value, documentation)
+          val += 1
+        end
+      end
+    rescue => error
+      STDERR.puts "Enumerations parsing error: #{error.message}"
+    end
+
+    begin
+      gir_document.elements.each("repository/namespace/bitfield") do |enum|
         name = enum.attributes["name"]
         enum_mod = ModuleObject.new(@module_yo, name)
         documentation = read_doc(enum)

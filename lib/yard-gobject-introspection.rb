@@ -20,36 +20,21 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     version = gir_document.elements["repository/namespace"].attributes["version"]
     @module_yo.docstring = "@version #{version}"
 
-    begin
-      gir_document.elements.each("repository/namespace/class") do |klass|
-        parent_klass = klass.attributes["parent"]
-
-        if parent_klass == nil || parent_klass == "GObject.Object"
-          build_class_object(klass, @module_yo)
-        elsif @klasses_yo[parent_klass]
-          build_class_object(klass, @klasses_yo[parent_klass])
-        else
-          @xml_klasses_queue << klass
-        end
+    gir_document.elements.each("repository/namespace/*") do |element|
+      case element.name
+      when "class"
+        parse_class_element(element)
+      when "record"
+        parse_class_element(element)
+      when "enumeration"
+        parse_enumeration_element(element)
+      when "bitfield"
+        parse_enumeration_element(element)
+      when "constant"
+        parse_module_constant(element)
+      else
+        STDERR.puts "!! #{element.name} type is not handled"
       end
-    rescue => error
-      STDERR.puts "Class parsing error : #{error.message}"
-    end
-
-    begin
-      gir_document.elements.each("repository/namespace/record") do |klass|
-        parent_klass = klass.attributes["parent"]
-
-        if parent_klass == nil || parent_klass == "GObject.Object"
-          build_class_object(klass, @module_yo)
-        elsif @klasses_yo[parent_klass]
-          build_class_object(klass, @klasses_yo[parent_klass])
-        else
-          @xml_klasses_queue << klass
-        end
-      end
-    rescue => error
-      STDERR.puts "Class parsing error : #{error.message}"
     end
 
     begin
@@ -71,56 +56,54 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     rescue => error
       STDERR.puts "SubClass parsing error : #{error.message}"
     end
-
-    begin
-      gir_document.elements.each("repository/namespace/constant") do |constant|
-        name = constant.attributes["name"]
-        value = constant.attributes["value"]
-        documentation = read_doc(constant)
-        register_constant(@module_yo, name, value, documentation)
-      end
-    rescue => error
-      STDERR.puts "Constants parsing error: #{error.message}"
-    end
-
-    begin
-      gir_document.elements.each("repository/namespace/enumeration") do |enum|
-        name = enum.attributes["name"]
-        enum_mod = ModuleObject.new(@module_yo, name)
-        documentation = read_doc(enum)
-        val = 0
-        enum.elements.each("member") do |member|
-          member_name = member.attributes["name"]
-          value = "#{member.attributes["value"] || val} or :#{member_name}"
-          documentation = read_doc(member)
-          register_constant(enum_mod, member_name.upcase, value, documentation)
-          val += 1
-        end
-      end
-    rescue => error
-      STDERR.puts "Enumerations parsing error: #{error.message}"
-    end
-
-    begin
-      gir_document.elements.each("repository/namespace/bitfield") do |enum|
-        name = enum.attributes["name"]
-        enum_mod = ModuleObject.new(@module_yo, name)
-        documentation = read_doc(enum)
-        val = 0
-        enum.elements.each("member") do |member|
-          member_name = member.attributes["name"]
-          value = "#{member.attributes["value"] || val} or :#{member_name}"
-          documentation = read_doc(member)
-          register_constant(enum_mod, member_name.upcase, value, documentation)
-          val += 1
-        end
-      end
-    rescue => error
-      STDERR.puts "Enumerations parsing error: #{error.message}"
-    end
   end
 
   private
+
+  def parse_class_element(klass)
+    begin
+      parent_klass = klass.attributes["parent"]
+
+      if parent_klass == nil || parent_klass == "GObject.Object"
+        build_class_object(klass, @module_yo)
+      elsif @klasses_yo[parent_klass]
+        build_class_object(klass, @klasses_yo[parent_klass])
+      else
+        @xml_klasses_queue << klass
+      end
+    rescue => error
+      STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
+    end
+  end
+
+  def parse_enumeration_element(enum)
+    begin
+      name = enum.attributes["name"]
+      enum_mod = ModuleObject.new(@module_yo, name)
+      documentation = read_doc(enum)
+      val = 0
+      enum.elements.each("member") do |member|
+        member_name = member.attributes["name"]
+        value = "#{member.attributes["value"] || val} or :#{member_name}"
+        documentation = read_doc(member)
+        register_constant(enum_mod, member_name.upcase, value, documentation)
+        val += 1
+      end
+    rescue => error
+      STDERR.puts "#{enum.name.capitalize} parsing error: #{error.message}"
+    end
+  end
+
+  def parse_module_constant(constant)
+    begin
+      name = constant.attributes["name"]
+      value = constant.attributes["value"]
+      documentation = read_doc(constant)
+      register_constant(@module_yo, name, value, documentation)
+    rescue => error
+      STDERR.puts "Constants parsing error: #{error.message}"
+    end
+  end
 
   def build_class_object(klass, parent)
     klass_name = klass.attributes["name"]

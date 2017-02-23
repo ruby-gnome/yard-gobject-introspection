@@ -45,7 +45,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   private
 
   def parse_module_function(function)
-    puts function.attributes["name"]
     _register_module_function(function, @module_yo)
   end
 
@@ -189,7 +188,17 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     _register_methods(klass, klass_yo, "constructor")
   end
 
+  def _register_methods(klass, klass_yo, method_type)
+    klass.elements.each(method_type) do |m|
+      _register_ruby_function(m, klass_yo, method_type)
+    end
+  end
+
   def _register_module_function(function, module_yo)
+    _register_ruby_function(function, module_yo, "method")
+  end
+
+  def _register_ruby_function(function, container, method_type)
     begin
     documentation = read_doc(function)
     parameters = []
@@ -202,30 +211,11 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
     name = function.attributes["name"]
     name = rubyish_method_name(name, parameters.size, ret_infos[:type])
-    method = MethodObject.new(module_yo, name)
+    method = MethodObject.new(container, name)
     method.parameters = parameters
     method.docstring = documentation
     rescue => error
-      STDERR.puts "Constants parsing error: #{error.message}"
-    end
-  end
-
-  def _register_methods(klass, klass_yo, method_type)
-    klass.elements.each(method_type) do |m|
-      documentation = read_doc(m)
-      parameters = []
-      m.elements.each("parameters/parameter") do |p|
-        infos = read_parameter_information(p)
-        documentation += "\n@param #{infos[:name]} [#{infos[:type]}] #{infos[:doc]}"
-        parameters << [infos[:name], nil]
-      end
-      ret_infos = read_return_value_information(m.elements["return-value"])
-      documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
-      name = m.attributes["name"]
-      name = rubyish_method_name(name, parameters.size, ret_infos[:type])
-      method = MethodObject.new(klass_yo, name)
-      method.parameters = parameters
-      method.docstring = documentation
+      STDERR.puts "Function parsing error: #{error.message}"
     end
   end
 

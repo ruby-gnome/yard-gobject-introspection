@@ -32,6 +32,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         parse_enumeration_element(element)
       when "constant"
         parse_module_constant(element)
+      when "function"
+        parse_module_function(element)
       else
         STDERR.puts "!! #{element.name} type is not handled"
       end
@@ -41,6 +43,11 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   end
 
   private
+
+  def parse_module_function(function)
+    puts function.attributes["name"]
+    _register_module_function(function, @module_yo)
+  end
 
   def parse_class_element(klass)
     begin
@@ -180,6 +187,27 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def register_constructors(klass, klass_yo)
     _register_methods(klass, klass_yo, "constructor")
+  end
+
+  def _register_module_function(function, module_yo)
+    begin
+    documentation = read_doc(function)
+    parameters = []
+    function.elements.each("parameters/parameter") do |p|
+      infos = read_parameter_information(p)
+      documentation += "\n@param #{infos[:name]} [#{infos[:type]}] #{infos[:doc]}"
+      parameters << [infos[:name], nil]
+    end
+    ret_infos = read_return_value_information(function.elements["return-value"])
+    documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
+    name = function.attributes["name"]
+    name = rubyish_method_name(name, parameters.size, ret_infos[:type])
+    method = MethodObject.new(module_yo, name)
+    method.parameters = parameters
+    method.docstring = documentation
+    rescue => error
+      STDERR.puts "Constants parsing error: #{error.message}"
+    end
   end
 
   def _register_methods(klass, klass_yo, method_type)

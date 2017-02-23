@@ -24,8 +24,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       case element.name
       when "class"
         parse_class_element(element)
-      when "record"
-        parse_class_element(element)
+#      when "record"
+#        parse_class_element(element)
       when "enumeration"
         parse_enumeration_element(element)
       when "bitfield"

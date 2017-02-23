@@ -37,6 +37,28 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
+    parse_orphan_class_element
+  end
+
+  private
+
+  def parse_class_element(klass)
+    begin
+      parent_klass = klass.attributes["parent"]
+
+      if parent_klass == nil || parent_klass == "GObject.Object"
+        build_class_object(klass, @module_yo)
+      elsif @klasses_yo[parent_klass]
+        build_class_object(klass, @klasses_yo[parent_klass])
+      else
+        @xml_klasses_queue << klass
+      end
+    rescue => error
+      STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
+    end
+  end
+
+  def parse_orphan_class_element
     begin
       @xml_klasses_queue.each do |klass|
         parent_klass = klass.attributes["parent"]
@@ -55,24 +77,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     rescue => error
       STDERR.puts "SubClass parsing error : #{error.message}"
-    end
-  end
-
-  private
-
-  def parse_class_element(klass)
-    begin
-      parent_klass = klass.attributes["parent"]
-
-      if parent_klass == nil || parent_klass == "GObject.Object"
-        build_class_object(klass, @module_yo)
-      elsif @klasses_yo[parent_klass]
-        build_class_object(klass, @klasses_yo[parent_klass])
-      else
-        @xml_klasses_queue << klass
-      end
-    rescue => error
-      STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
     end
   end
 

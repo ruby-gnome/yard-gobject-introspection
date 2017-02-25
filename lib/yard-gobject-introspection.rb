@@ -24,8 +24,6 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       case element.name
       when "class"
         parse_class_element(element)
-#      when "record"
-#        parse_class_element(element)
       when "enumeration"
         parse_enumeration_element(element)
       when "bitfield"
@@ -34,6 +32,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         parse_module_constant(element)
       when "function"
         parse_module_function(element)
+      when "interface"
+        parse_interface_module(element)
       else
         STDERR.puts "!! #{element.name} type is not handled"
       end
@@ -43,6 +43,22 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   end
 
   private
+
+  def parse_interface_module(klass)
+    begin
+      parent_klass = klass.attributes["parent"]
+
+      if parent_klass == nil || parent_klass == "GObject.Object"
+        build_module_object(klass, @module_yo)
+      elsif @klasses_yo[parent_klass]
+        build_module_object(klass, @klasses_yo[parent_klass])
+      else
+        @xml_klasses_queue << klass
+      end
+    rescue => error
+      STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
+    end
+  end
 
   def parse_module_function(function)
     _register_module_function(function, @module_yo)
@@ -125,6 +141,15 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     register_properties(klass, klass_yo)
   end
 
+  def build_module_object(klass, parent)
+    module_name = klass.attributes["name"]
+    module_yo = ModuleObject.new(parent, module_name)
+    @klasses_yo[module_name] = module_yo
+    module_yo.docstring = read_doc(klass)
+    register_virtual_methods(klass, module_yo)
+    register_methods(klass, module_yo)
+  end
+
   def read_doc(node)
     documentation = node.elements["doc"]
     documentation ? parse_gtk_doc_tags(documentation.text) : ""
@@ -181,6 +206,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     const = ConstantObject.new(namespace, name)
     const.value = value
     const.docstring = doc
+  end
+
+  def register_virtual_methods(klass, klass_yo)
+    _register_methods(klass, klass_yo, "virtual-method")
   end
 
   def register_methods(klass, klass_yo)

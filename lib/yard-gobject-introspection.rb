@@ -159,8 +159,11 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     # Substitue #GtkSomething to Gtk::Something
     parsed = doc.gsub(/\#([A-Z]+[a-z]+)([A-Z]+.*)/, '\1::\2')
     # Substitue gtk code tag to markdown code
-    # TODO: does not work try to see why http://rubular.com/r/cE7GiDyhDj
-    parsed.gsub!(/\|\[\&lt;!-- language=(.*) --&gt;\n((\n|.)*)\]\|/, '<tt>\2</tt>')
+    if /\|\[\<\!\-\- (\n|.)* \-\->((\n|.)*)\]\|/ =~ parsed
+      code = Regexp.last_match(2)
+      code.gsub!(/\n/, "\n    ")
+      parsed.gsub!(/\|\[\<\!\-\- (\n|.)* \-\->((\n|.)*)\]\|/, code)
+    end
     # Manage @parameter to <b>parameter</b>
     parsed.gsub!(/@(\w+)/,'<b>\1</b>')
     # Replace Null terminated array

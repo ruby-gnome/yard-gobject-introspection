@@ -14,7 +14,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     gir_document = REXML::Document.new file
 
     @klasses_yo = {}
-    @xml_klasses_queue = []
+#    @xml_klasses_queue = []
 
     @module_yo = register ModuleObject.new(namespace, @module_name)
     version = gir_document.elements["repository/namespace"].attributes["version"]
@@ -41,7 +41,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
-    parse_orphan_class_element
+#    parse_orphan_class_element
   end
 
   private
@@ -49,15 +49,15 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   def build_object(klass)
     return unless block_given?
 
-    parent_klass = klass.attributes["parent"]
+#    parent_klass = klass.attributes["parent"]
 
-    if parent_klass == nil || parent_klass == "GObject.Object"
+#    if parent_klass == nil || parent_klass == "GObject.Object"
       yield(klass, @module_yo)
-    elsif @klasses_yo[parent_klass]
-      yield(klass, @klasses_yo[parent_klass])
-    else
-      @xml_klasses_queue << klass
-    end
+#    elsif @klasses_yo[parent_klass]
+#      yield(klass, @klasses_yo[parent_klass])
+#    else
+#      @xml_klasses_queue << klass
+#    end
   end
 
   def parse_interface_module(klass)

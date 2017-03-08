@@ -34,6 +34,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
         parse_module_function(element)
       when "interface"
         parse_interface_module(element)
+      when "record"
+        parse_record_element(element)
       else
         STDERR.puts "!! #{element.name} type is not handled"
       end
@@ -80,11 +82,38 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     end
   end
 
+  def parse_record_element(klass)
+    begin
+      parent_klass = klass.attributes["parent"]
+      case klass.attributes["name"]
+      when /Class\z/
+        if parent_klass == nil || parent_klass == "GObject.Object"
+          build_record_class_object(klass, @module_yo)
+        elsif @klasses_yo[parent_klass]
+          build_record_class_object(klass, @klasses_yo[parent_klass])
+        else
+          @xml_klasses_queue << klass
+        end
+      when /Iface\z/
+        if parent_klass == nil || parent_klass == "GObject.Object"
+          build_record_module_object(klass, @module_yo)
+        elsif @klasses_yo[parent_klass]
+          build_record_module_object(klass, @klasses_yo[parent_klass])
+        else
+          @xml_klasses_queue << klass
+        end
+      else
+        STDERR.puts "Record not managed : #{klass.attributes["name"]}"
+      end
+    rescue => error
+      STDERR.puts "Record #{klass.name} parsing error : #{error.message}"
+    end
+  end
+
   def parse_orphan_class_element
     begin
       @xml_klasses_queue.each do |klass|
         parent_klass = klass.attributes["parent"]
-
         if parent_klass == nil || parent_klass == "GObject.Object"
           build_class_object(klass, @module_yo)
         elsif @klasses_yo[parent_klass]
@@ -139,6 +168,25 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
     register_properties(klass, klass_yo)
+  end
+
+  def build_record_class_object(klass, parent)
+    klass_name = klass.attributes["name"].gsub(/Class\z/,"")
+    klass_yo = ClassObject.new(parent, klass_name)
+    @klasses_yo[klass_name] = klass_yo
+    klass_yo.docstring = read_doc(klass)
+    register_constructors(klass, klass_yo)
+    register_methods(klass, klass_yo)
+    register_properties(klass, klass_yo)
+  end
+
+  def build_record_module_object(klass, parent)
+    module_name = klass.attributes["name"].gsub(/Iface\z/,"")
+    module_yo = ModuleObject.new(parent, module_name)
+    @klasses_yo[module_name] = module_yo
+    register_virtual_methods(klass, module_yo)
+    register_methods(klass, module_yo)
+    _register_callbacks(klass, module_yo)
   end
 
   def build_module_object(klass, parent)
@@ -221,6 +269,12 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def register_constructors(klass, klass_yo)
     _register_methods(klass, klass_yo, "constructor")
+  end
+
+  def _register_callbacks(klass, klass_yo)
+    klass.elements.each("field/callback") do |m|
+      _register_ruby_function(m, klass_yo, "callback")
+    end
   end
 
   def _register_methods(klass, klass_yo, method_type)

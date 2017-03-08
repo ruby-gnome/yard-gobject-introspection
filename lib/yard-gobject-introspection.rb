@@ -46,16 +46,24 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   private
 
+  def build_object(klass)
+    return unless block_given?
+
+    parent_klass = klass.attributes["parent"]
+
+    if parent_klass == nil || parent_klass == "GObject.Object"
+      yield(klass, @module_yo)
+    elsif @klasses_yo[parent_klass]
+      yield(klass, @klasses_yo[parent_klass])
+    else
+      @xml_klasses_queue << klass
+    end
+  end
+
   def parse_interface_module(klass)
     begin
-      parent_klass = klass.attributes["parent"]
-
-      if parent_klass == nil || parent_klass == "GObject.Object"
-        build_module_object(klass, @module_yo)
-      elsif @klasses_yo[parent_klass]
-        build_module_object(klass, @klasses_yo[parent_klass])
-      else
-        @xml_klasses_queue << klass
+      build_object(klass) do |k, p|
+        build_module_object(k, p)
       end
     rescue => error
       STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
@@ -68,14 +76,8 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def parse_class_element(klass)
     begin
-      parent_klass = klass.attributes["parent"]
-
-      if parent_klass == nil || parent_klass == "GObject.Object"
-        build_class_object(klass, @module_yo)
-      elsif @klasses_yo[parent_klass]
-        build_class_object(klass, @klasses_yo[parent_klass])
-      else
-        @xml_klasses_queue << klass
+      build_object(klass) do |k, p|
+        build_class_object(k, p)
       end
     rescue => error
       STDERR.puts "Class #{klass.name} parsing error : #{error.message}"
@@ -84,23 +86,14 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def parse_record_element(klass)
     begin
-      parent_klass = klass.attributes["parent"]
       case klass.attributes["name"]
       when /Class\z/
-        if parent_klass == nil || parent_klass == "GObject.Object"
-          build_record_class_object(klass, @module_yo)
-        elsif @klasses_yo[parent_klass]
-          build_record_class_object(klass, @klasses_yo[parent_klass])
-        else
-          @xml_klasses_queue << klass
+        build_object(klass) do |k, p|
+          build_record_class_object(k, p)
         end
       when /Iface\z/
-        if parent_klass == nil || parent_klass == "GObject.Object"
-          build_record_module_object(klass, @module_yo)
-        elsif @klasses_yo[parent_klass]
-          build_record_module_object(klass, @klasses_yo[parent_klass])
-        else
-          @xml_klasses_queue << klass
+        build_object(klass) do |k, p|
+          build_record_module_object(k, p)
         end
       else
         STDERR.puts "Record not managed : #{klass.attributes["name"]}"

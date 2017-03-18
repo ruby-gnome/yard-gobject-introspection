@@ -351,21 +351,24 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       "Integer"
     when "gdouble"
       "Float"
-    when "utf8"
+    when /(utf8)|(gunichar)/
       "String"
     when "gboolean"
       "TrueClass"
+    when "none"
+      "nil"
+    when "gpointer"
+      "GObject" # TODO : try to confirm
     when /.*\..*/
       ctype.gsub("\.", "::")
+    when "GType"
+      "GLib::Type"
     else
+      STDERR.puts "Ctype not handled : #{ctype}"
       "#{@module_name}::#{ctype}"
     end
     # TODO : manage :
     # va_list
-    # gpointer
-    # gsf_off_t
-    # gpointer
     # gsf_off_t
   end
 end
-

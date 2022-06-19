@@ -1,11 +1,12 @@
 require "yard"
 require "rexml/document"
+require "rbconfig"
 
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
 
   def process
-    gir_path = "/usr/share/gir-1.0"
+    gir_path = File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
     girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")

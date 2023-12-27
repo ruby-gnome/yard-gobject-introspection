@@ -5,7 +5,11 @@ require "rbconfig"
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
 
+  @@has_processed_module = false
+
   def process
+    return if @@has_processed_module
+
     gir_path = File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
@@ -42,6 +46,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
+    @@has_processed_module = true
 #    parse_orphan_class_element
   end
 

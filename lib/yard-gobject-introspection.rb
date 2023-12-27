@@ -307,7 +307,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     end
     ret_infos = read_return_value_information(function.elements["return-value"])
     documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
-    name = function.attributes["name"]
+    name = method_type == 'constructor' ? 'initialize' : function.attributes["name"]
     name = rubyish_method_name(name, parameters.size, ret_infos[:type])
     method = MethodObject.new(container, name, method_type == 'function' ? :class : :instance)
     method.parameters = parameters

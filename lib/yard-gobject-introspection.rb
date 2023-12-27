@@ -241,7 +241,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
       if readable == "1"
         rname = method_name
-        rname += "?" if type == "TrueClass"
+        rname += "?" if type == "Boolean"
         documentation += "\n@return [#{type}] #{name}"
         method = MethodObject.new(klass_yo, rname)
         method.docstring = documentation
@@ -370,7 +370,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     when /(utf8)|(gunichar)/
       "String"
     when "gboolean"
-      "TrueClass"
+      "Boolean"
     when "none"
       "nil"
     when "gpointer"

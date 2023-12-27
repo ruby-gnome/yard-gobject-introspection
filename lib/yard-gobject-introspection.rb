@@ -168,6 +168,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       klass_yo.superclass = parent_klass.gsub("\.", "::")
     end
     klass_yo.docstring = read_doc(klass)
+    register_functions(klass, klass_yo)
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
     register_properties(klass, klass_yo)
@@ -178,6 +179,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
     klass_yo.docstring = read_doc(klass)
+    register_functions(klass, klass_yo)
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
     register_properties(klass, klass_yo)
@@ -270,6 +272,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     _register_methods(klass, klass_yo, "method")
   end
 
+  def register_functions(klass, klass_yo)
+    _register_methods(klass, klass_yo, "function")
+  end
+
   def register_constructors(klass, klass_yo)
     _register_methods(klass, klass_yo, "constructor")
   end
@@ -303,7 +309,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
     name = function.attributes["name"]
     name = rubyish_method_name(name, parameters.size, ret_infos[:type])
-    method = MethodObject.new(container, name)
+    method = MethodObject.new(container, name, method_type == 'function' ? :class : :instance)
     method.parameters = parameters
     method.docstring = documentation
     rescue => error

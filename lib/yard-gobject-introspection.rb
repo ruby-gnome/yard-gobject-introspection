@@ -163,6 +163,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_name = klass.attributes["name"]
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
+    parent_klass = klass.attributes["parent"]
+    if !parent_klass.nil? && parent_klass != "GObject.Object"
+      klass_yo.superclass = parent_klass.gsub("\.", "::")
+    end
     klass_yo.docstring = read_doc(klass)
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)

@@ -10,7 +10,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   def process
     return if @@has_processed_module
 
-    gir_path = File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
+    gir_path = ENV['GIR_PATH'] || File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
     girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")

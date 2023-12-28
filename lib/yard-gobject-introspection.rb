@@ -336,7 +336,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       type = ctypes_to_ruby(node.elements["type"].attributes["name"])
       if node.elements["type"].elements["type"]
         subtype = ctypes_to_ruby(node.elements["type"].elements["type"].attributes["name"])
-        type = "#{type}<#{subtype}>"
+        type << "<#{subtype}>"
       end
     elsif node.elements["array"]
       type = node.elements["array/type"].attributes["name"]
@@ -357,7 +357,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       type = ctypes_to_ruby(node.elements["type"].attributes["name"])
       if node.elements["type"].elements["type"]
         subtype = ctypes_to_ruby(node.elements["type"].elements["type"].attributes["name"])
-        type = "#{type}<#{subtype}>"
+        type << "<#{subtype}>"
       end
     elsif node.elements["array"]
       type = node.elements["array/type"].attributes["name"]

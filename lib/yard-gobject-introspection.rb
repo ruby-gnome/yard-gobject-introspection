@@ -5,14 +5,14 @@ require "rbconfig"
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
 
-  @@has_processed_module = false
+  @@processed_modules = []
 
   def process
-    return if @@has_processed_module
-
     gir_path = ENV['GIR_PATH'] || File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
+    return if @@processed_modules.include?(@module_name)
+
     girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")
     gir_file = girs_files.last
     file = File.new(gir_file)
@@ -46,7 +46,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
-    @@has_processed_module = true
+    @@processed_modules << @module_name
 #    parse_orphan_class_element
   end
 

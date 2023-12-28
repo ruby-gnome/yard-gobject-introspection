@@ -8,7 +8,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   @@processed_modules = []
 
   def process
-    gir_path = ENV['GIR_PATH'] || File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
+    gir_path = ENV["GI_GIR_PATH"] || File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
     return if @@processed_modules.include?(@module_name)

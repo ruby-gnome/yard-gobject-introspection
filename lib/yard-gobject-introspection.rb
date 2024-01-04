@@ -5,10 +5,14 @@ require "rbconfig"
 class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
   handles :module
 
+  @@processed_modules = []
+
   def process
-    gir_path = File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
+    gir_path = ENV["GI_GIR_PATH"] || File.expand_path("gir-1.0", RbConfig::CONFIG["datadir"])
 
     @module_name = statement[0].source
+    return if @@processed_modules.include?(@module_name)
+
     girs_files = Dir.glob("#{gir_path}/#{@module_name}-?.*gir")
     gir_file = girs_files.last
     file = File.new(gir_file)
@@ -42,6 +46,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
       end
     end
 
+    @@processed_modules << @module_name
 #    parse_orphan_class_element
   end
 
@@ -158,7 +163,12 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_name = klass.attributes["name"]
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
+    parent_klass = klass.attributes["parent"]
+    if !parent_klass.nil? && parent_klass != "GObject.Object"
+      klass_yo.superclass = parent_klass.gsub(".", "::")
+    end
     klass_yo.docstring = read_doc(klass)
+    register_functions(klass, klass_yo)
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
     register_properties(klass, klass_yo)
@@ -169,6 +179,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     klass_yo = ClassObject.new(parent, klass_name)
     @klasses_yo[klass_name] = klass_yo
     klass_yo.docstring = read_doc(klass)
+    register_functions(klass, klass_yo)
     register_constructors(klass, klass_yo)
     register_methods(klass, klass_yo)
     register_properties(klass, klass_yo)
@@ -230,7 +241,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
       if readable == "1"
         rname = method_name
-        rname += "?" if type == "TrueClass"
+        rname += "?" if type == "Boolean"
         documentation += "\n@return [#{type}] #{name}"
         method = MethodObject.new(klass_yo, rname)
         method.docstring = documentation
@@ -259,6 +270,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
 
   def register_methods(klass, klass_yo)
     _register_methods(klass, klass_yo, "method")
+  end
+
+  def register_functions(klass, klass_yo)
+    _register_methods(klass, klass_yo, "function")
   end
 
   def register_constructors(klass, klass_yo)
@@ -292,9 +307,9 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     end
     ret_infos = read_return_value_information(function.elements["return-value"])
     documentation += "\n@return [#{ret_infos[:type]}] #{ret_infos[:doc]}"
-    name = function.attributes["name"]
+    name = method_type == "constructor" ? "initialize" : function.attributes["name"]
     name = rubyish_method_name(name, parameters.size, ret_infos[:type])
-    method = MethodObject.new(container, name)
+    method = MethodObject.new(container, name, method_type == 'function' ? :class : :instance)
     method.parameters = parameters
     method.docstring = documentation
     rescue => error
@@ -319,6 +334,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     type = nil
     if node.elements["type"]
       type = ctypes_to_ruby(node.elements["type"].attributes["name"])
+      if node.elements["type"].elements["type"]
+        subtype = ctypes_to_ruby(node.elements["type"].elements["type"].attributes["name"])
+        type << "<#{subtype}>"
+      end
     elsif node.elements["array"]
       type = node.elements["array/type"].attributes["name"]
       type = "Array<#{ctypes_to_ruby(type)}>"
@@ -336,6 +355,10 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     type = nil
     if node.elements["type"]
       type = ctypes_to_ruby(node.elements["type"].attributes["name"])
+      if node.elements["type"].elements["type"]
+        subtype = ctypes_to_ruby(node.elements["type"].elements["type"].attributes["name"])
+        type << "<#{subtype}>"
+      end
     elsif node.elements["array"]
       type = node.elements["array/type"].attributes["name"]
       type = "Array<#{ctypes_to_ruby(type)}>"
@@ -355,7 +378,7 @@ class GObjectIntropsectionHandler < YARD::Handlers::Ruby::Base
     when /(utf8)|(gunichar)/
       "String"
     when "gboolean"
-      "TrueClass"
+      "Boolean"
     when "none"
       "nil"
     when "gpointer"
